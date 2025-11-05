@@ -1,0 +1,18 @@
+CREATE DATABASE Escuela;
+USE Escuela;
+SHOW DATABASES;
+CREATE TABLE Alumno(
+NIF VARCHAR(10) PRIMARY KEY NOT NULL,
+nombre VARCHAR(20),
+trabaja BOOLEAN,
+estudios SET('ESO','BACHILLERATO','FP MEDIO','FP SUPERIOR', 'GRADO UNIVERSITARIO'),
+ingresos DECIMAL(18,2),
+fecha_de_nacimiento DATE
+);
+SHOW TABLES;
+describe Alumno;
+
+INSERT IGNORE INTO Alumno(NIF, nombre,trabaja,estudios,ingresos,fecha_de_nacimiento) values ('123456789K','Sebastian Burneo', 1,'FP SUPERIOR', 123456.78, '1999-07-19'), ('123456789L','LOPE GUERRERO',0,'FP MEDIO', 123456.78,'2005-11-11'), ('123456789G','Desiree Cobos', 1,'GRADO UNIVERSITARIO', 123456.78, '1996-09-19'), ('123456789I','Ivan',0,'BACHILLERATO', 123456.78,'2005-10-02'); 
+select *from Alumno;
+
+SELECT * FROM Alumno ORDER BY fecha_de_nacimiento DESC;
