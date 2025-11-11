@@ -19,3 +19,4 @@ descuento INT NULL,
 Cif INT, CONSTRAINT FK_facturas_clientes FOREIGN KEY (Cif) REFERENCES clientes(Cif) ON DELETE CASCADE
 );
  
+ 

@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS Act_Consultas_SQL_Sebastian_Israel_Burneo_Reyes;
 use Act_Consultas_SQL_Sebastian_Israel_Burneo_Reyes;
 
 CREATE TABLE IF NOT EXISTS clientes(
-idcliente INT AUTO_INCREMENT PRIMARY KEY ,
+idcliente INT AUTO_INCREMENT ,constraint PK_idCliente PRIMARY KEY (idcliente), 
 nombre VARCHAR(25) NOT NULL,
 direccion varchar (40),
 poblacion VARCHAR(40) NOT NULL DEFAULT 'Madrid',
@@ -10,6 +10,8 @@ facturacion INT,
 fechaalta DATE,
 credito INT NOT NULL DEFAULT 500
 );
+
+
 INSERT IGNORE INTO clientes (nombre, direccion, poblacion, facturacion, fechaalta, credito) VALUES
 ('Juan Pérez', 'Calle Mayor 12', 'Madrid', 25000, '2024-01-15', 1000),
 ('Laura Gómez', 'Avda. del Sol 45', 'Sevilla', 18000, '2024-03-10', 750),
@@ -23,10 +25,30 @@ INSERT IGNORE INTO clientes (nombre, direccion, poblacion, facturacion, fechaalt
 ('Elena Navarro', 'Calle Sur 19', 'Valladolid', 35000, '2024-10-30', 1500),
 ('Javier Castillo', null, 'Toledo', 28000, '2024-04-12', 700);
 
+
+
+
 CREATE TABLE IF NOT EXISTS filial(
 idfilial INT AUTO_INCREMENT PRIMARY KEY ,
 nombre VARCHAR(50), 
 idCliente INT, CONSTRAINT FK_clientes_filial FOREIGN KEY (idCliente)
 REFERENCES clientes (idCliente)
 );
+
+INSERT IGNORE INTO filial (nombre, idCliente) VALUES 
+('Filial Norte', 1),
+('Filial Sur', 2),
+('Filial Este', 3), 
+('Filial Oeste', 4),
+('Filial Central', 5),
+('Filial Andina', 6), 
+('Filial Pacífico', 7),
+('Filial Atlántico', 8),
+('Filial Amazonia', 9),
+('Filial Patagonia', 10);
+
+
+
+
+
 
