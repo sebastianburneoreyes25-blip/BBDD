@@ -11,6 +11,8 @@ fechaalta DATE,
 credito INT NOT NULL DEFAULT 500
 );
 
+DESCRIBE clientes;
+SELECT * FROM clientes;
 
 INSERT IGNORE INTO clientes (nombre, direccion, poblacion, facturacion, fechaalta, credito) VALUES
 ('Juan Pérez', 'Calle Mayor 12', 'Madrid', 25000, '2024-01-15', 1000),
@@ -25,8 +27,25 @@ INSERT IGNORE INTO clientes (nombre, direccion, poblacion, facturacion, fechaalt
 ('Elena Navarro', 'Calle Sur 19', 'Valladolid', 35000, '2024-10-30', 1500),
 ('Javier Castillo', null, 'Toledo', 28000, '2024-04-12', 700);
 
+INSERT INTO clientes (nombre, direccion, poblacion, facturacion, fechaalta, credito) VALUES
+('Cliente prueba', 'Avda. del Sol 45', 'Sevilla', 180000, '2024-03-10', 7500);
 
-
+SELECT nombre,direccion FROM clientes;
+SELECT DISTINCT POBLACION FROM clientes;
+SELECT *FROM clientes ORDER BY fechaalta ASC;
+SELECT * FROM clientes WHERE credito>2000;
+SELECT nombre,facturacion,facturacion-1000 AS facturacionReducido from clientes;
+SELECT nombre, facturacion/10 AS facturacion10 from clientes;
+SELECT * FROM clientes WHERE facturacion>=15000;
+SELECT * FROM clientes WHERE facturacion <20000;
+SELECT * FROM clientes WHERE poblacion='Madrid' OR poblacion='Barcelona';
+SELECT *FROM clientes WHERE nombre LIKE '%Cliente%';
+SELECT *FROM clientes WHERE facturacion BETWEEN 15000 and 25000;
+SELECT *FROM clientes WHERE poblacion IN ('Madrid','Barcelona','Valencia');
+SELECT *FROM clientes WHERE direccion IS NULL;
+SELECT poblacion, sum(facturacion) as facturacion_Total FROM clientes GROUP BY poblacion;
+SELECT poblacion, sum(facturacion) AS facturacionTotal FROM clientes GROUP BY poblacion HAVING facturacionTotal>40000;
+SELECT * FROM clientes ORDER BY credito DESC;
 
 CREATE TABLE IF NOT EXISTS filial(
 idfilial INT AUTO_INCREMENT PRIMARY KEY ,
@@ -34,6 +53,8 @@ nombre VARCHAR(50),
 idCliente INT, CONSTRAINT FK_clientes_filial FOREIGN KEY (idCliente)
 REFERENCES clientes (idCliente)
 );
+
+DESCRIBE  filial;
 
 INSERT IGNORE INTO filial (nombre, idCliente) VALUES 
 ('Filial Norte', 1),
@@ -47,7 +68,7 @@ INSERT IGNORE INTO filial (nombre, idCliente) VALUES
 ('Filial Amazonia', 9),
 ('Filial Patagonia', 10);
 
-
+SELECT * FROM filial;
 
 
 
