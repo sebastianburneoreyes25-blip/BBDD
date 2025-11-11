@@ -53,6 +53,7 @@ select* from empleados ORDER BY salario DESC;
         
 describe empleados;
 
+
 INSERT INTO empleados
 set nombre='Alba',
 	genero='A',
