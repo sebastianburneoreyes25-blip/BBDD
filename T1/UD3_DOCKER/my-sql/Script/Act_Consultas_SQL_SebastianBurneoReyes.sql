@@ -1,7 +1,9 @@
 CREATE DATABASE IF NOT EXISTS Act_Consultas_SQL_Sebastian_Israel_Burneo_Reyes;
 use Act_Consultas_SQL_Sebastian_Israel_Burneo_Reyes;
 
-CREATE TABLE IF NOT EXISTS clientes(
+DROP TABLE IF EXISTS clientes;
+
+CREATE TABLE clientes(
 idcliente INT AUTO_INCREMENT ,constraint PK_idCliente PRIMARY KEY (idcliente), 
 nombre VARCHAR(25) NOT NULL,
 direccion varchar (40),
@@ -46,12 +48,26 @@ SELECT *FROM clientes WHERE direccion IS NULL;
 SELECT poblacion, sum(facturacion) as facturacion_Total FROM clientes GROUP BY poblacion;
 SELECT poblacion, sum(facturacion) AS facturacionTotal FROM clientes GROUP BY poblacion HAVING facturacionTotal>40000;
 SELECT * FROM clientes ORDER BY credito DESC;
+UPDATE clientes SET credito=5000 WHERE poblacion='Madrid';
+select poblacion,credito from clientes where poblacion='Madrid';
+SELECT * FROM clientes WHERE facturacion>=(SELECT AVG(facturacion)FROM clientes);
+DELETE FROM clientes WHERE facturacion<10000;
+SELECT COUNT(idcliente) FROM clientes;
+SELECT AVG(facturacion) FROM clientes;
+SELECT MAX(facturacion) FROM clientes;
+SELECT MIN(facturacion)FROM clientes;
+SELECT SUM(credito)FROM clientes;
+SELECT DISTINCT poblacion FROM clientes;
+SELECT COUNT(DISTINCT poblacion) FROM clientes;
+SELECT *FROM clientes WHERE fechaalta>'2023-06-01';
+SELECT *FROM clientes WHERE poblacion NOT IN ('Madrid','Barcelona') ;
+
 
 CREATE TABLE IF NOT EXISTS filial(
 idfilial INT AUTO_INCREMENT PRIMARY KEY ,
 nombre VARCHAR(50), 
 idCliente INT, CONSTRAINT FK_clientes_filial FOREIGN KEY (idCliente)
-REFERENCES clientes (idCliente)
+REFERENCES clientes (idCliente) ON DELETE RESTRICT
 );
 
 DESCRIBE  filial;
