@@ -61,6 +61,14 @@ SELECT DISTINCT poblacion FROM clientes;
 SELECT COUNT(DISTINCT poblacion) FROM clientes;
 SELECT *FROM clientes WHERE fechaalta>'2023-06-01';
 SELECT *FROM clientes WHERE poblacion NOT IN ('Madrid','Barcelona') ;
+SELECT *FROM clientes WHERE facturacion ORDER BY facturacion DESC LIMIT 5;
+SELECT *FROM clientes ORDER BY fechaalta ASC LIMIT 5 OFFSET 3;
+SELECT *FROM clientes WHERE nombre NOT LIKE ("%Cliente%");
+SELECT c.idcliente, c.nombre, f.idfilial, f.nombre	FROM clientes c JOIN filial f on c.idcliente=f.idcliente;
+SELECT *FROM clientes LEFT JOIN filial ON clientes.idcliente=filial.idcliente;
+SELECT c.idcliente, c.nombre, f.idfilial FROM clientes c INNER JOIN filial f ON c.idcliente=f.idcliente;
+SELECT DISTINCT c.idcliente, c.nombre, cc.poblacion FROM clientes c  JOIN clientes cc ON c.poblacion=cc.poblacion order by cc.poblacion; 
+SELECT * FROM clientes c LEFT JOIN filial f ON c.idcliente=f.idcliente WHERE facturacion>=(SELECT   
 
 
 CREATE TABLE IF NOT EXISTS filial(
@@ -83,6 +91,7 @@ INSERT IGNORE INTO filial (nombre, idCliente) VALUES
 ('Filial Atlántico', 8),
 ('Filial Amazonia', 9),
 ('Filial Patagonia', 10);
+
 
 SELECT * FROM filial;
 
