@@ -68,7 +68,12 @@ SELECT c.idcliente, c.nombre, f.idfilial, f.nombre	FROM clientes c JOIN filial f
 SELECT *FROM clientes LEFT JOIN filial ON clientes.idcliente=filial.idcliente;
 SELECT c.idcliente, c.nombre, f.idfilial FROM clientes c INNER JOIN filial f ON c.idcliente=f.idcliente;
 SELECT DISTINCT c.idcliente, c.nombre, cc.poblacion FROM clientes c  JOIN clientes cc ON c.poblacion=cc.poblacion order by cc.poblacion; 
-SELECT * FROM clientes c LEFT JOIN filial f ON c.idcliente=f.idcliente WHERE facturacion>=(SELECT   
+Select c.idcliente,c.nombre,count(f.idfilial) as cantidad_filiales from clientes c LEFT JOIN filial f on c.idcliente=f.idCliente group by c.idcliente;
+SELECT *FROM clientes c RIGHT JOIN filial f ON c.idcliente=f.idcliente WHERE c.facturacion>20000;
+SELECT c.idcliente, c.nombre, (SELECT count(f.idfilial) from filial f WHERE f.idcliente=c.idcliente) as cantidad_filiales FROM clientes c; 
+SELECT * FROM clientes c LEFT JOIN filial f ON c.idcliente=f.idcliente where f.idfilial is null;
+SELECT *FROM clientes c RIGHT JOIN filial f ON c.idcliente=f.idcliente WHERE c.idcliente is null;
+
 
 
 CREATE TABLE IF NOT EXISTS filial(
@@ -92,6 +97,7 @@ INSERT IGNORE INTO filial (nombre, idCliente) VALUES
 ('Filial Amazonia', 9),
 ('Filial Patagonia', 10);
 
+INSERT INTO filial(nombre) Values ('FilialSinCliente');
 
 SELECT * FROM filial;
 
