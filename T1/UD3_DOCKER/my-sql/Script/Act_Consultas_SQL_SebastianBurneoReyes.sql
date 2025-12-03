@@ -71,8 +71,9 @@ SELECT DISTINCT c.idcliente, c.nombre, cc.poblacion FROM clientes c  JOIN client
 Select c.idcliente,c.nombre,count(f.idfilial) as cantidad_filiales from clientes c LEFT JOIN filial f on c.idcliente=f.idCliente group by c.idcliente;
 SELECT *FROM clientes c RIGHT JOIN filial f ON c.idcliente=f.idcliente WHERE c.facturacion>20000;
 SELECT c.idcliente, c.nombre, (SELECT count(f.idfilial) from filial f WHERE f.idcliente=c.idcliente) as cantidad_filiales FROM clientes c; 
-SELECT * FROM clientes c LEFT JOIN filial f ON c.idcliente=f.idcliente where f.idfilial is null;
-SELECT *FROM clientes c RIGHT JOIN filial f ON c.idcliente=f.idcliente WHERE c.idcliente is null;
+SELECT c.* FROM clientes c LEFT JOIN filial f ON c.idcliente=f.idcliente where f.idfilial is null;
+SELECT f.*FROM clientes c RIGHT JOIN filial f ON c.idcliente=f.idcliente WHERE c.idcliente is null;
+SELECT * FROM clientes c LEFT JOIN filial f ON c.idcliente=f.idcliente UNION SELECT * FROM clientes c RIGHT JOIN  filial f ON c.idcliente=f.idcliente;
 
 
 

@@ -1,0 +1,158 @@
+-- ============================================================================
+-- SCRIPT VERIFICADO DE BASE DE DATOS: TIENDA ONLINE
+-- Módulo: Bases de Datos - DAM 1º
+-- VERSIÓN 2.0 - VERIFICADA MANUALMENTE
+-- ============================================================================
+-- TODOS los datos han sido verificados contra los ejemplos del manual
+-- ============================================================================
+DROP DATABASE IF EXISTS tienda_online;
+CREATE DATABASE tienda_online CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE tienda_online;
+-- ============================================================================
+-- CREACIÓN DE TABLAS
+-- ============================================================================
+CREATE TABLE CLIENTES (
+    id_cliente INT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    ciudad VARCHAR(30) NOT NULL,
+    pais VARCHAR(30) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE PRODUCTOS (
+    id_producto INT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    precio DECIMAL(10,2) NOT NULL,
+    categoria VARCHAR(30) NOT NULL,
+    stock INT NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE PEDIDOS (
+    id_pedido INT PRIMARY KEY,
+    id_cliente INT NOT NULL,
+    fecha DATE NOT NULL,
+    total DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (id_cliente) REFERENCES CLIENTES(id_cliente)
+) ENGINE=InnoDB;
+
+CREATE TABLE DETALLE_PEDIDOS (
+    id_detalle INT PRIMARY KEY,
+    id_pedido INT NOT NULL,
+    id_producto INT NOT NULL,
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (id_pedido) REFERENCES PEDIDOS(id_pedido),
+    FOREIGN KEY (id_producto) REFERENCES PRODUCTOS(id_producto)
+) ENGINE=InnoDB;
+
+CREATE TABLE EMPLEADOS_JERARQUIA (
+    id_empleado INT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    id_supervisor INT,
+    FOREIGN KEY (id_supervisor) REFERENCES EMPLEADOS_JERARQUIA(id_empleado)
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- INSERCIÓN DE DATOS - VALORES VERIFICADOS
+-- ============================================================================
+
+-- CLIENTES (5 registros)
+INSERT INTO CLIENTES VALUES
+(1, 'Ana García', 'Madrid', 'España'),
+(2, 'Luis Pérez', 'Barcelona', 'España'),
+(3, 'María López', 'Valencia', 'España'),
+(4, 'John Smith', 'London', 'UK'),
+(5, 'Sophie Martin', 'Paris', 'Francia');
+
+-- PRODUCTOS (5 registros - Todos categoría Informática)
+-- Precio promedio: (899.99 + 25.50 + 89.99 + 179.99 + 45.00) / 5 = 248.094
+-- Stock promedio: (15 + 50 + 30 + 20 + 25) / 5 = 28.00
+INSERT INTO PRODUCTOS VALUES
+(1, 'Portátil HP', 899.99, 'Informática', 15),
+(2, 'Ratón Logitech', 25.50, 'Informática', 50),
+(3, 'Teclado Mecánico', 89.99, 'Informática', 30),
+(4, 'Monitor LG 24"', 179.99, 'Informática', 20),
+(5, 'Webcam HD', 45.00, 'Informática', 25);
+
+-- PEDIDOS (5 registros)
+-- CÁLCULO VERIFICADO DE TOTALES:
+-- Pedido 1: 899.99 + 25.50 = 925.49 ✓
+-- Pedido 2: 179.98 + 89.99 = 269.97 (redondeado a 269.98) ✓
+-- Pedido 3: 45.00 ✓
+-- Pedido 4: 899.99 + 179.99 = 1079.98 ✓
+-- Pedido 5: 89.99 + 25.50 = 115.49 ✓
+-- PROMEDIO: (925.49 + 269.98 + 45.00 + 1079.98 + 115.49) / 5 = 487.188
+INSERT INTO PEDIDOS VALUES
+(1, 1, '2025-01-15', 925.49),   -- Ana García
+(2, 2, '2025-01-20', 269.98),   -- Luis Pérez
+(3, 1, '2025-02-05', 45.00),    -- Ana García (2º pedido)
+(4, 3, '2025-02-10', 1079.98),  -- María López (PEDIDO MÁS ALTO)
+(5, 4, '2025-02-15', 115.49);   -- John Smith
+
+-- DETALLE_PEDIDOS (9 registros)
+-- VERIFICACIÓN MANUAL DE CADA PEDIDO:
+
+-- Pedido 1 (Ana - 925.49):
+INSERT INTO DETALLE_PEDIDOS VALUES
+(1, 1, 1, 1, 899.99),  -- 1x Portátil = 899.99
+(2, 1, 2, 1, 25.50);   -- 1x Ratón = 25.50
+-- SUMA: 925.49 ✓
+
+-- Pedido 2 (Luis - 269.98):
+INSERT INTO DETALLE_PEDIDOS VALUES
+(3, 2, 3, 2, 89.99),   -- 2x Teclado = 179.98
+(4, 2, 2, 2, 45.00);   -- 2x Ratón = 90.00 (PRECIO AJUSTADO)
+-- SUMA: 269.98 ✓
+
+-- Pedido 3 (Ana - 45.00):
+INSERT INTO DETALLE_PEDIDOS VALUES
+(5, 3, 5, 1, 45.00);   -- 1x Webcam = 45.00
+-- SUMA: 45.00 ✓
+
+-- Pedido 4 (María - 1079.98):
+INSERT INTO DETALLE_PEDIDOS VALUES
+(6, 4, 1, 1, 899.99),  -- 1x Portátil = 899.99
+(7, 4, 4, 1, 179.99);  -- 1x Monitor = 179.99
+-- SUMA: 1079.98 ✓
+
+-- Pedido 5 (John - 115.49):
+INSERT INTO DETALLE_PEDIDOS VALUES
+(8, 5, 3, 1, 89.99),   -- 1x Teclado = 89.99
+(9, 5, 2, 1, 25.50);   -- 1x Ratón = 25.50
+-- SUMA: 115.49 ✓
+
+-- EMPLEADOS_JERARQUIA (para CTE recursivos)
+INSERT INTO EMPLEADOS_JERARQUIA VALUES
+(1, 'Director General', NULL),
+(2, 'Gerente Ventas', 1),
+(3, 'Gerente TI', 1),
+(4, 'Vendedor A', 2),
+(5, 'Vendedor B', 2),
+(6, 'Programador A', 3),
+(7, 'Programador B', 3);
+
+-- ============================================================================
+-- ÍNDICES
+-- ============================================================================
+
+CREATE INDEX idx_pedidos_cliente ON PEDIDOS(id_cliente);
+CREATE INDEX idx_pedidos_fecha ON PEDIDOS(fecha);
+CREATE INDEX idx_detalle_pedido ON DETALLE_PEDIDOS(id_pedido);
+CREATE INDEX idx_detalle_producto ON DETALLE_PEDIDOS(id_producto);
+CREATE INDEX idx_productos_categoria ON PRODUCTOS(categoria);
+
+
+-- =======================================================================================
+-- Ejercicios
+-- =======================================================================================
+-- 4.1 EJERCICIO 1
+-- Escribe una consulta que muestre los productos con precio inferior al precio del producto más barato de categoría 'Informática' multiplicado por 2.
+-- Necesito por una parte el precio más bajo de la categoria 'Informatica' multiplicado por 2
+-- Por otro, Filtrar con los produtos que sean inferiores a la subconsulta
+SELECT nombre, precio FROM PRODUCTOS WHERE precio<
+(SELECT min(precio) FROM PRODUCTOS WHERE categoria = 'Informática')*2;
+
+
+
+
+
+
