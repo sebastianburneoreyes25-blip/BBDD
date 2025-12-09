@@ -68,13 +68,13 @@ SELECT c.idcliente, c.nombre, f.idfilial, f.nombre	FROM clientes c JOIN filial f
 SELECT *FROM clientes LEFT JOIN filial ON clientes.idcliente=filial.idcliente;
 SELECT c.idcliente, c.nombre, f.idfilial FROM clientes c INNER JOIN filial f ON c.idcliente=f.idcliente;
 SELECT DISTINCT c.idcliente, c.nombre, cc.poblacion FROM clientes c  JOIN clientes cc ON c.poblacion=cc.poblacion order by cc.poblacion; 
-Select c.idcliente,c.nombre,count(f.idfilial) as cantidad_filiales from clientes c LEFT JOIN filial f on c.idcliente=f.idCliente group by c.idcliente;
+Select c.*,count(f.idfilial) as cantidad_filiales from clientes c LEFT JOIN filial f on c.idcliente=f.idCliente group by c.idcliente;
 SELECT *FROM clientes c RIGHT JOIN filial f ON c.idcliente=f.idcliente WHERE c.facturacion>20000;
 SELECT c.idcliente, c.nombre, (SELECT count(f.idfilial) from filial f WHERE f.idcliente=c.idcliente) as cantidad_filiales FROM clientes c; 
-SELECT c.* FROM clientes c LEFT JOIN filial f ON c.idcliente=f.idcliente where f.idfilial is null;
-SELECT f.*FROM clientes c RIGHT JOIN filial f ON c.idcliente=f.idcliente WHERE c.idcliente is null;
-SELECT * FROM clientes c LEFT JOIN filial f ON c.idcliente=f.idcliente UNION SELECT * FROM clientes c RIGHT JOIN  filial f ON c.idcliente=f.idcliente;
-
+SELECT * FROM clientes c LEFT JOIN filial f ON c.idcliente=f.idcliente where f.idfilial is null;
+SELECT *FROM clientes c RIGHT JOIN filial f ON c.idcliente=f.idcliente WHERE c.idcliente is null;
+SELECT * FROM clientes c join filial f on f.idcliente=c.idcliente where (select count(f.idfilial) as cantidad from filial f  WHERE f.idcliente=c.idcliente); 
+SELECT * FROM clientes WHERE (select count(idfilial) as cantidad from filial where clientes.idcliente=filial.idcliente);
 
 
 CREATE TABLE IF NOT EXISTS filial(

@@ -252,5 +252,23 @@ SELECT * FROM DETALLE_PEDIDOS;
 
 /*Ejercicio E2: Productos que solo compran clientes de un país
 Enunciado: Encuentra productos que solo han sido comprados por clientes de España.*/
-SELECT PR.nombre, PR.precio FROM PEDIDOS P JOIN PRODUCTOS PR ON PR.id_producto=P.id_producto WHERE P.id_producto in (SELECT PR.id_producto FROM PRODUCTOS PR WHERE PR.id_producto in
-(SELECT DP.* FROM DETALLE_PEDIDOS DP WHERE DP.id_pedido=(SELECT P.id_pedido FROM PEDIDOS P WHERE (SELECT C.pais FROM CLIENTES C WHERE C.id_cliente=P.id_cliente)='España')));
+SELECT distinct PR.nombre, PR.precio FROM PRODUCTOS PR JOIN DETALLE_PEDIDOS DP ON DP.id_producto=PR.id_producto WHERE PR.id_producto in
+	(SELECT DP.id_producto 
+	FROM DETALLE_PEDIDOS DP 
+	JOIN PEDIDOS P ON P.id_pedido=DP.id_pedido 
+	JOIN CLIENTES C ON C.id_cliente=P.id_cliente 
+	WHERE C.pais='España') 
+    AND  PR.id_producto NOT IN 
+    (SELECT DP.id_producto FROM PEDIDOS P 
+    JOIN CLIENTES C ON C.id_cliente=P.id_cliente 
+    JOIN DETALLE_PEDIDOS DP ON DP.id_pedido=P.id_pedido
+    WHERE C.id_cliente =P.id_cliente AND DP.id_pedido=P.id_pedido AND C.pais !='España')
+;
+
+
+/*Ejercicio E3: Clientes con gasto en el top 30%
+Enunciado: Muestra los clientes cuyo gasto total los coloca en el 30% superior de todos los clientes.*/
+SELECT C.nombre, (SELECT SUM(total)FROM PEDIDOS P WHERE C.id_cliente=P.id_cliente) AS gastoTottal FROM CLIENTES C 
+WHERE (SELECT SUM(total)FROM PEDIDOS P WHERE C.id_cliente=P.id_cliente)>=(SELECT DISTINCT totalCli FROM (SELECT id_cliente, sum(total) as totalCli 
+FROM PEDIDOS GROUP BY id_cliente ORDER BY totalCli DESC LIMIT 2)AS TOP ORDER BY totalCli ASC limit 1)ORDER BY gastoTottal DESC;
+
