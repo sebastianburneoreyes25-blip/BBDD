@@ -191,12 +191,66 @@ GROUP BY P.id_producto HAVING count(DISTINCT PE.id_cliente)>1;
 
 /*Ejercicio 10 (Muy Avanzado): 
 Muestra los clientes que han comprado al menos un producto de cada categoría disponible en la tienda.*/
+SELECT C.id_cliente, C.nombre FROM CLIENTES C JOIN PEDIDOS PE ON PE.id_cliente=C.id_cliente JOIN DETALLE_PEDIDOS DP ON DP.id_pedido=PE.id_pedido 
+JOIN PRODUCTOS PR ON PR.id_producto=DP.id_producto 
+GROUP BY C.id_cliente, C.nombre HAVING  COUNT( PR.categoria)=(SELECT distinct count(PR.categoria)FROM PRODUCTOS);
 
-SELECT C.id_cliente, C.nombre FROM CLIENTES C JOIN PEDIDOS PE ON PE.id_cliente=C.id_cliente JOIN DETALLE_PEDIDOS DP ON DP.id_pedido=PE.id_pedido JOIN PRODUCTOS PR ON PR.id_producto=DP.id_producto 
-GROUP BY C.id_cliente, C.nombre HAVING COUNT(DISTINCT PR.categoria)=(SELECT count(distinct PR.categoria)FROM PRODUCTOS);
+/*Ejercicio B1: Productos caros
+Enunciado: Muestra los productos con precio superior a 100€.*/
+SELECT * FROM PRODUCTOS WHERE precio>100;
 
+/*Ejercicio B2: Cliente con el pedido mínimo
+Enunciado: Muestra el nombre del cliente que realizó el pedido de menor importe.*/
+SELECT * FROM CLIENTES c JOIN PEDIDOS p ON c.id_cliente=p.id_cliente WHERE p.total=(SELECT min(total)FROM PEDIDOS);
 
+/*Ejercicio B3: Productos más baratos que la media
+Enunciado: Lista los productos con precio inferior al precio promedio de todos los productos.*/
+SELECT * FROM PRODUCTOS WHERE precio<(SELECT avg(precio) FROM PRODUCTOS);
 
+/*Ejercicio I1: Clientes sin pedidos
+Enunciado: Muestra los clientes que NO han realizado ningún pedido.*/
+SELECT C.*FROM CLIENTES C WHERE C.id_cliente NOT IN(SELECT id_cliente FROM PEDIDOS); 
 
+/*Ejercicio I2: Productos sin ventas
+Enunciado: Lista los productos que NO han sido vendidos nunca.*/
+SELECT * FROM PRODUCTOS WHERE id_producto NOT in (SELECT id_producto FROM DETALLE_PEDIDOS);
 
+/*Ejercicio I3: Clientes con pedidos superiores al promedio
+Enunciado: Muestra los clientes que tienen al menos un pedido con importe superior al promedio de todos los pedidos.*/
+SELECT C.* FROM CLIENTES C JOIN PEDIDOS P ON P.id_cliente=C.id_cliente WHERE total>(SELECT AVG(total) FROM PEDIDOS );
 
+/*Ejercicio I4: Productos más caros que TODOS los de stock alto
+Enunciado: Lista productos cuyo precio supera a TODOS los productos con stock mayor a 30 unidades.*/
+SELECT * FROM PRODUCTOS WHERE precio>all(SELECT precio FROM PRODUCTOS WHERE stock>=30);
+
+/*Ejercicio A1: Productos con menos stock que el promedio de su categoría
+Enunciado: Muestra productos cuyo stock es inferior al stock promedio de productos en su misma categoría.*/
+SELECT * FROM PRODUCTOS P1 WHERE P1.stock<(SELECT AVG(P2.stock) FROM PRODUCTOS P2 WHERE P1.categoria=P2.categoria);
+
+/*Ejercicio A2: Clientes con más pedidos que el promedio
+Enunciado: Muestra los clientes que han realizado más pedidos que el promedio de pedidos por cliente.*/
+SELECT c.*, (SELECT count(p.id_pedido) FROM PEDIDOS p WHERE p.id_cliente=c.id_cliente)as pedidos_realizados FROM CLIENTES c  
+WHERE (SELECT count(p.id_pedido) FROM PEDIDOS p WHERE p.id_cliente=c.id_cliente)>
+(SELECT AVG(pedidos_clientes) FROM(SELECT COUNT(*) AS pedidos_clientes FROM PEDIDOS GROUP BY id_cliente) as subconsulta); 
+
+/*Ejercicio A3: Segunda compra de cada cliente
+Enunciado: Para los clientes con más de un pedido, muestra su segundo pedido (por fecha).*/
+SELECT C.nombre, P.* FROM CLIENTES C INNER JOIN PEDIDOS P ON P.id_cliente=C.id_cliente WHERE 1= 
+(SELECT COUNT(id_pedido) FROM PEDIDOS P2 WHERE P.id_cliente=P2.id_cliente AND P2.fecha<P.fecha);
+
+/*Ejercicio A4: Clientes que compraron el producto más caro
+Enunciado: Muestra los clientes que han comprado el producto más caro de la tienda.*/
+SELECT distinct C.nombre FROM CLIENTES C JOIN PEDIDOS PE ON C.id_cliente=PE.id_cliente 
+JOIN DETALLE_PEDIDOS DP ON DP.id_pedido=PE.id_pedido WHERE DP.id_producto= (SELECT id_producto FROM PRODUCTOS WHERE precio=(SELECT MAX(precio)FROM PRODUCTOS));  
+
+/*Ejercicio E1: Ranking de productos más vendidos con subconsultas
+Enunciado: Crea un ranking de productos por unidades vendidas, mostrando su posición.*/
+SELECT DISTINCT p.*,(SELECT  SUM( DP.CANTIDAD) FROM DETALLE_PEDIDOS DP GROUP BY DP.id_producto HAVING DP.id_producto=p.id_producto ) AS CantidadVendida 
+FROM PRODUCTOS p JOIN DETALLE_PEDIDOS DP ON p.id_producto=DP.id_producto ORDER BY CantidadVendida DESC; 
+
+SELECT * FROM DETALLE_PEDIDOS;
+
+/*Ejercicio E2: Productos que solo compran clientes de un país
+Enunciado: Encuentra productos que solo han sido comprados por clientes de España.*/
+SELECT PR.nombre, PR.precio FROM PEDIDOS P JOIN PRODUCTOS PR ON PR.id_producto=P.id_producto WHERE P.id_producto in (SELECT PR.id_producto FROM PRODUCTOS PR WHERE PR.id_producto in
+(SELECT DP.* FROM DETALLE_PEDIDOS DP WHERE DP.id_pedido=(SELECT P.id_pedido FROM PEDIDOS P WHERE (SELECT C.pais FROM CLIENTES C WHERE C.id_cliente=P.id_cliente)='España')));
