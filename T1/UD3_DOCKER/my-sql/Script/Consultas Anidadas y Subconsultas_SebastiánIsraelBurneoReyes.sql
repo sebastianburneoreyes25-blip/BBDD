@@ -272,3 +272,59 @@ SELECT C.nombre, (SELECT SUM(total)FROM PEDIDOS P WHERE C.id_cliente=P.id_client
 WHERE (SELECT SUM(total)FROM PEDIDOS P WHERE C.id_cliente=P.id_cliente)>=(SELECT DISTINCT totalCli FROM (SELECT id_cliente, sum(total) as totalCli 
 FROM PEDIDOS GROUP BY id_cliente ORDER BY totalCli DESC LIMIT 2)AS TOP ORDER BY totalCli ASC limit 1)ORDER BY gastoTottal DESC;
 
+/*Ejercicio Final 1: Dashboard de Ventas Completo
+Enunciado: Crea un informe que muestre:
+1. Total de ventas del mes actual
+2. Comparación con el mes anterior (% crecimiento)
+3. Top 3 productos más vendidos
+4. Top 3 clientes por gasto
+5. Categorías con crecimiento negativo
+Pista: Usa múltiples CTE y funciones de ventana.*/
+
+CREATE OR REPLACE VIEW v_ventas_mensuales AS
+SELECT YEAR(fecha) AS año, MONTH(fecha) AS mes, SUM(total) AS total_ventas
+FROM PEDIDOS GROUP BY YEAR(fecha), MONTH(fecha);
+
+SELECT * FROM v_ventas_mensuales;
+
+CREATE OR REPLACE VIEW v_comparacion_meses AS
+SELECT MAX(CASE WHEN año = YEAR(CURDATE()) AND mes = MONTH(CURDATE()) THEN total_ventas END) AS ventas_mes_actual,
+MAX(CASE WHEN año = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))AND mes = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) THEN total_ventas END) AS ventas_mes_anterior FROM v_ventas_mensuales;
+
+Select * from v_comparacion_meses;
+
+CREATE OR REPLACE VIEW v_top_productos AS
+SELECT producto, unidades_vendidas FROM(SELECT p.nombre AS producto, SUM(d.cantidad) AS unidades_vendidas, RANK() OVER (ORDER BY SUM(d.cantidad) DESC) AS ranking FROM DETALLE_PEDIDOS d 
+JOIN PRODUCTOS p ON d.id_producto = p.id_producto GROUP BY p.id_producto) t WHERE ranking <= 3;
+
+SELECT * FROM v_top_productos;
+
+CREATE OR REPLACE VIEW v_top_clientes AS
+SELECT cliente, gasto_total FROM (
+    SELECT c.nombre AS cliente, SUM(p.total) AS gasto_total, RANK() OVER (ORDER BY SUM(p.total) DESC) AS ranking
+    FROM PEDIDOS p JOIN CLIENTES c ON p.id_cliente = c.id_cliente GROUP BY c.id_cliente
+) t WHERE ranking <= 3;
+
+SELECT * FROM v_top_clientes;
+
+CREATE OR REPLACE VIEW v_ventas_categoria_mes AS
+SELECT pr.categoria,YEAR(pe.fecha) AS año,MONTH(pe.fecha) AS mes,SUM(d.cantidad * d.precio_unitario) AS ventas FROM DETALLE_PEDIDOS d
+JOIN PEDIDOS pe ON d.id_pedido = pe.id_pedido JOIN PRODUCTOS pr ON d.id_producto = pr.id_producto GROUP BY pr.categoria, YEAR(pe.fecha), MONTH(pe.fecha);
+
+SELECT * FROM v_ventas_categoria_mes;
+
+CREATE OR REPLACE VIEW v_categorias_crecimiento_negativo AS
+SELECT categoria, ventas,diferencia FROM ( SELECT categoria, ventas,ventas - LAG(ventas) OVER ( PARTITION BY categoria ORDER BY año, mes) AS diferencia
+FROM v_ventas_categoria_mes) t WHERE diferencia < 0;
+
+SELECT * FROM v_categorias_crecimiento_negativo;
+
+CREATE OR REPLACE VIEW v_dashboard_ventas AS
+SELECT cm.ventas_mes_actual, cm.ventas_mes_anterior, ROUND( ((cm.ventas_mes_actual - cm.ventas_mes_anterior)/ cm.ventas_mes_anterior) * 100, 2) 
+AS crecimiento_porcentual, tp.producto, tp.unidades_vendidas, tc.cliente, tc.gasto_total, cn.categoria AS categoria_en_descenso
+FROM v_comparacion_meses cm 
+LEFT JOIN v_top_productos tp ON 1=1
+LEFT JOIN v_top_clientes tc ON 1=1
+LEFT JOIN v_categorias_crecimiento_negativo cn ON 1=1;
+
+SELECT * FROM v_dashboard_ventas;
