@@ -328,3 +328,57 @@ LEFT JOIN v_top_clientes tc ON 1=1
 LEFT JOIN v_categorias_crecimiento_negativo cn ON 1=1;
 
 SELECT * FROM v_dashboard_ventas;
+
+/*Ejercicio Final 2: Sistema de Alertas de Negocio
+Enunciado: Implementa consultas para detectar:
+1. Productos con stock crítico (< 20% del stock promedio)
+2. Clientes inactivos (sin compras en 60+ días)
+3. Productos sin ventas en 90 días
+4. Pedidos con importe anormalmente alto (>3x promedio)
+Requisito: Todo en una sola consulta usando UNION ALL.*/
+
+SELECT "STOCK CRÍTICO" AS tipo_alerta, p.nombre, p.stock FROM PRODUCTOS p WHERE p.stock < ( SELECT AVG(stock) * 0.2 FROM PRODUCTOS)
+UNION ALL
+SELECT "Cliente inactivoo" AS tipo_alerta, c.nombre, 'Sin compras en más de 60 días' AS detalle
+FROM CLIENTES c LEFT JOIN PEDIDOS p ON c.id_cliente = p.id_cliente GROUP BY c.id_cliente HAVING MAX(p.fecha) < DATE_SUB(CURDATE(), INTERVAL 60 DAY) OR MAX(p.fecha) IS NULL
+UNION ALL
+SELECT "PRODUCTO SIN VENTAS" AS tipo_alerta, pr.nombre, "Sin ventas en los últimos 90 días" AS detalle
+FROM PRODUCTOS pr LEFT JOIN DETALLE_PEDIDOS d ON pr.id_producto = d.id_producto LEFT JOIN PEDIDOS pe ON d.id_pedido = pe.id_pedido
+GROUP BY pr.id_producto HAVING MAX(pe.fecha) < DATE_SUB(CURDATE(), INTERVAL 90 DAY) OR MAX(pe.fecha) IS NULL
+UNION ALL
+SELECT "Pedido anormalmente alto" AS tipo_alerta, id_pedido, total
+FROM PEDIDOS WHERE total > ( SELECT AVG(total) * 3 FROM PEDIDOS);
+
+
+/*Ejercicio Final 3: Análisis Predictivo Básico
+Enunciado: Predice las ventas del próximo mes basándote en:
+1. Promedio móvil de últimos 3 meses
+2. Tendencia (crecimiento % mes a mes)
+3. Estacionalidad (mismo mes año anterior)
+Reto: Usa CTE recursivos para generar la serie temporal.*/
+
+CREATE OR REPLACE VIEW v_serie_meses AS
+WITH RECURSIVE serie_meses AS ( SELECT DATE_FORMAT(MIN(fecha), '%Y-%m-01') AS mes FROM PEDIDOS
+UNION ALL
+SELECT DATE_ADD(mes, INTERVAL 1 MONTH) FROM serie_meses WHERE mes < DATE_FORMAT(CURDATE(), '%Y-%m-01')) SELECT mes FROM serie_meses;
+
+SELECT * FROM v_serie_meses;
+
+CREATE OR REPLACE VIEW v_ventas_por_mes AS
+SELECT DATE_FORMAT(fecha, '%Y-%m-01') AS mes, SUM(total) AS ventas
+FROM PEDIDOS GROUP BY DATE_FORMAT(fecha, '%Y-%m-01');
+
+CREATE OR REPLACE VIEW v_serie_completa AS
+SELECT s.mes, COALESCE(v.ventas, 0) AS ventas
+FROM v_serie_meses s LEFT JOIN v_ventas_por_mes v ON s.mes = v.mes;
+
+CREATE OR REPLACE VIEW v_analisis_predictivo AS
+SELECT mes, ventas, AVG(ventas) OVER ( ORDER BY mes ROWS BETWEEN 2 PRECEDING AND CURRENT ROW ) AS promedio_movil_3m,
+LAG(ventas) OVER (ORDER BY mes) AS ventas_mes_anterior, ROUND( (ventas - LAG(ventas) OVER (ORDER BY mes)) / NULLIF(LAG(ventas) OVER (ORDER BY mes), 0) * 100,  2) AS crecimiento_pct, 
+LAG(ventas, 12) OVER (ORDER BY mes) AS ventas_año_anterior FROM v_serie_completa;
+
+CREATE OR REPLACE VIEW v_prediccion_proximo_mes AS
+SELECT DATE_ADD(MAX(mes), INTERVAL 1 MONTH) AS mes_predicho, ROUND( (AVG(promedio_movil_3m) + AVG(ventas_año_anterior)) / 2 * (1 + AVG(crecimiento_pct) / 100), 2) AS prediccion_ventas
+FROM v_analisis_predictivo;
+
+SELECT * FROM v_prediccion_proximo_mes;
