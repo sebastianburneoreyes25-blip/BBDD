@@ -117,3 +117,66 @@ INNER JOIN usuarios u ON p.id_usuario = u.id_usuario
 INNER JOIN libros l ON p.id_libro = l.id_libro
 INNER JOIN autores a ON l.id_autor = a.id_autor
 INNER JOIN editoriales e ON l.id_editorial = e.id_editorial;
+
+/*Ejemplo 7: Valoraciones con usuario y libro*/
+SELECT u.nombre_usuario, l.titulo, v.puntuacion, v.comentario FROM valoraciones v
+INNER JOIN usuarios u ON v.id_usuario = u.id_usuario
+INNER JOIN libros l ON v.id_libro = l.id_libro;
+
+/*Ejemplo 8: Préstamos de libros publicados después de 2000*/
+SELECT u.nombre_usuario, l.titulo, l.año_publicacion, p.fecha_prestamo FROM prestamos p
+INNER JOIN usuarios u ON p.id_usuario = u.id_usuario
+INNER JOIN libros l ON p.id_libro = l.id_libro
+WHERE l.año_publicacion > 2000;
+
+/*Ejemplo 9: Préstamos aún no devueltos*/
+SELECT u.nombre_usuario,l.titulo,p.fecha_prestamo,p.fecha_devolucion FROM prestamos p
+INNER JOIN usuarios u ON p.id_usuario = u.id_usuario
+INNER JOIN libros l ON p.id_libro
+WHERE p.devuelto = FALSE;
+
+/*Ejemplo 23: Producto cartesiano simple - Usuarios × Libros*/
+SELECT u.nombre_usuario, l.titulo FROM usuarios u CROSS JOIN libros l LIMIT 10;
+
+/*Ejemplo 24: Caso práctico - Combinaciones de turnos y salas
+Escenario: La biblioteca tiene 3 salas de lectura y 4 turnos horarios. Queremos generar todas las posibles combinaciones
+para el planning.*/
+
+-- Creamos tablas temporales para el ejemplo
+CREATE TEMPORARY TABLE salas (
+id_sala INT,
+nombre_sala VARCHAR(50)
+);
+
+CREATE TEMPORARY TABLE turnos (
+id_turno INT,
+horario VARCHAR(20)
+);
+INSERT INTO salas VALUES
+(1, 'Sala Cervantes'),
+(2, 'Sala Borges'),
+(3, 'Sala García Márquez');
+INSERT INTO turnos VALUES
+(1, '09:00-11:00'),
+(2, '11:00-13:00'),
+(3, '15:00-17:00'),
+(4, '17:00-19:00');
+-- CROSS JOIN para generar planning completo
+SELECT s.nombre_sala, t.horario FROM salas s CROSS JOIN turnos t
+ORDER BY s.nombre_sala, t.id_turno;
+
+/*Ejemplo 25: CROSS JOIN implícito (sintaxis antigua)*/
+-- Sintaxis moderna (explícita)
+SELECT u.nombre_usuario, l.titulo FROM usuarios u CROSS JOIN libros l;
+-- Sintaxis antigua (implícita) - SIN condición ON/WHERE
+SELECT u.nombre_usuario, l.titulo FROM usuarios u, libros l;
+
+/*Ejemplo 26: Libros del mismo autor
+Objetivo: Encontrar pares de libros escritos por el mismo autor.*/
+SELECT l1.titulo AS libro1, l2.titulo AS libro2, a.nombre_autor
+FROM libros l1
+INNER JOIN libros l2 ON l1.id_autor = l2.id_autor AND l1.id_libro < l2.id_libro
+INNER JOIN autores a ON l1.id_autor = a.id_autor
+ORDER BY a.nombre_autor, l1.titulo;
+
+/*Ejemplo 27: Usuarios que leyeron el mismo libro*/
