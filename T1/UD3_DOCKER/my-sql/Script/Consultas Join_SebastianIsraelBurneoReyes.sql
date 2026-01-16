@@ -180,3 +180,209 @@ INNER JOIN autores a ON l1.id_autor = a.id_autor
 ORDER BY a.nombre_autor, l1.titulo;
 
 /*Ejemplo 27: Usuarios que leyeron el mismo libro*/
+SELECT DISTINCT u1.nombre_usuario AS usuario1,
+u2.nombre_usuario AS usuario2,
+l.titulo AS libro_en_comun
+FROM prestamos p1
+INNER JOIN prestamos p2 ON p1.id_libro = p2.id_libro AND p1.id_usuario < p2.id_usuario
+INNER JOIN usuarios u1 ON p1.id_usuario = u1.id_usuario
+INNER JOIN usuarios u2 ON p2.id_usuario = u2.id_usuario
+INNER JOIN libros l ON p1.id_libro = l.id_libro
+ORDER BY l.titulo, u1.nombre_usuario;
+
+/*Ejemplo 28: Estructura jerárquica simulada - Secciones y subsecciones de biblioteca
+
+Escenario: La biblioteca tiene secciones (ej: «Literatura») y subsecciones (ej: «Literatura española», «Literatura latino-
+americana») en la misma tabla.*/
+-- Tabla con relación jerárquica (un campo apunta a su propio ID)
+CREATE TEMPORARY TABLE secciones_biblioteca (
+id_seccion INT PRIMARY KEY,
+nombre_seccion VARCHAR(100),
+id_seccion_padre INT -- apunta a secciones_biblioteca.id_seccion
+);
+INSERT INTO secciones_biblioteca VALUES
+(1, 'Literatura', NULL),
+(2, 'Literatura española', 1),
+(3, 'Literatura latinoamericana', 1),
+(4, 'Ciencia', NULL),
+(5, 'Física', 4),
+(6, 'Química', 4),
+(7, 'Historia', NULL);
+-- SELF JOIN: mostrar secciones padre e hijas
+SELECT padre.nombre_seccion AS seccion_padre,
+hija.nombre_seccion AS subseccion
+FROM secciones_biblioteca padre
+INNER JOIN secciones_biblioteca hija ON padre.id_seccion = hija.id_seccion_padre
+ORDER BY padre.nombre_seccion, hija.nombre_seccion;
+
+/*Ejemplo 29: Tabla de eventos y asistencias con doble clave*/
+-- Escenario: eventos de biblioteca (charlas, talleres) y asistencias
+CREATE TEMPORARY TABLE eventos (
+fecha_evento DATE,
+hora_evento TIME,
+nombre_evento VARCHAR(100),
+PRIMARY KEY (fecha_evento, hora_evento)
+);
+CREATE TEMPORARY TABLE asistencias (
+fecha_evento DATE,
+hora_evento TIME,
+id_usuario INT,
+asistio BOOLEAN
+);
+INSERT INTO eventos VALUES
+('2024-12-01', '10:00:00', 'Taller de escritura creativa'),
+('2024-12-01', '16:00:00', 'Charla: García Márquez'),
+('2024-12-05', '10:00:00', 'Club de lectura');
+INSERT INTO asistencias VALUES
+('2024-12-01', '10:00:00', 1, TRUE),
+('2024-12-01', '10:00:00', 2, TRUE),
+('2024-12-01', '16:00:00', 1, FALSE),
+('2024-12-05', '10:00:00', 3, TRUE);
+-- JOIN con condición compuesta (2 columnas)
+SELECT e.nombre_evento,
+u.nombre_usuario,
+a.asistio
+FROM asistencias a
+INNER JOIN eventos e ON a.fecha_evento = e.fecha_evento
+AND a.hora_evento = e.hora_evento
+INNER JOIN usuarios u ON a.id_usuario = u.id_usuario;
+
+-- Ejemplo 30: Usuarios que se registraron el mismo mes
+SELECT u1.nombre_usuario AS usuario1,
+u2.nombre_usuario AS usuario2,
+DATE_FORMAT(u1.fecha_registro, '%Y-%m') AS mes_registro
+FROM usuarios u1
+INNER JOIN usuarios u2 ON YEAR(u1.fecha_registro) = YEAR(u2.fecha_registro)
+AND MONTH(u1.fecha_registro) = MONTH(u2.fecha_registro)
+AND u1.id_usuario < u2.id_usuario
+ORDER BY mes_registro, u1.nombre_usuario;
+
+/*Ejemplo 31: Préstamos con rango de fechas superpuestas*/
+-- Préstamos que se superponen en el tiempo (mismo libro prestado simultáneamente -␣
+-- ↪ERROR de gestión)
+SELECT p1.id_prestamo AS prestamo1,
+p2.id_prestamo AS prestamo2,
+l.titulo,
+p1.fecha_prestamo AS inicio1,
+p1.fecha_devolucion AS fin1,
+p2.fecha_prestamo AS inicio2,
+p2.fecha_devolucion AS fin2
+FROM prestamos p1
+INNER JOIN prestamos p2 ON p1.id_libro = p2.id_libro
+AND p1.id_prestamo < p2.id_prestamo
+AND p1.fecha_prestamo <= p2.fecha_devolucion
+AND p2.fecha_prestamo <= p1.fecha_devolucion
+
+INNER JOIN libros l ON p1.id_libro = l.id_libro
+WHERE p1.fecha_devolucion IS NOT NULL
+AND p2.fecha_devolucion IS NOT NULL;
+
+-- Ejemplo 32: Número de préstamos por usuario
+SELECT u.nombre_usuario,
+COUNT(p.id_prestamo) AS total_prestamos,
+COUNT(CASE WHEN p.devuelto = FALSE THEN 1 END) AS prestamos_activos
+FROM usuarios u
+LEFT JOIN prestamos p ON u.id_usuario = p.id_usuario
+GROUP BY u.id_usuario, u.nombre_usuario
+ORDER BY total_prestamos DESC;
+
+-- Ejemplo 33: Libros más populares (por número de préstamos)
+SELECT l.titulo,
+a.nombre_autor,
+COUNT(p.id_prestamo) AS veces_prestado,
+MIN(p.fecha_prestamo) AS primer_prestamo,
+MAX(p.fecha_prestamo) AS ultimo_prestamo
+FROM libros l
+INNER JOIN autores a ON l.id_autor = a.id_autor
+LEFT JOIN prestamos p ON l.id_libro = p.id_libro
+GROUP BY l.id_libro, l.titulo, a.nombre_autor
+HAVING COUNT(p.id_prestamo) > 0
+ORDER BY veces_prestado DESC
+LIMIT 5;
+
+-- Ejemplo 34: Autores más valorados (promedio de puntuaciones)
+SELECT a.nombre_autor,
+COUNT(DISTINCT l.id_libro) AS libros_publicados,
+COUNT(v.id_valoracion) AS num_valoraciones,
+ROUND(AVG(v.puntuacion), 2) AS puntuacion_media,
+MIN(v.puntuacion) AS peor_valoracion,
+MAX(v.puntuacion) AS mejor_valoracion
+FROM autores a
+LEFT JOIN libros l ON a.id_autor = l.id_autor
+LEFT JOIN valoraciones v ON l.id_libro = v.id_libro
+GROUP BY a.id_autor, a.nombre_autor
+HAVING num_valoraciones > 0
+ORDER BY puntuacion_media DESC, num_valoraciones DESC;
+
+-- Ejemplo 35: Usuarios con más préstamos que el promedio
+SELECT u.nombre_usuario,
+COUNT(p.id_prestamo) AS total_prestamos
+FROM usuarios u
+INNER JOIN prestamos p ON u.id_usuario = p.id_usuario
+GROUP BY u.id_usuario, u.nombre_usuario
+HAVING COUNT(p.id_prestamo) > (
+SELECT AVG(prestamos_por_usuario)
+FROM ( SELECT COUNT(*) AS prestamos_por_usuario
+FROM prestamos GROUP BY id_usuario
+) AS subconsulta
+)
+ORDER BY total_prestamos DESC;
+
+
+-- Ejemplo 36: Libros nunca prestados de autores populares
+SELECT l.titulo,
+a.nombre_autor,
+l.año_publicacion
+FROM libros l
+INNER JOIN autores a ON l.id_autor = a.id_autor
+INNER JOIN (
+-- Autores con al menos 2 libros prestados
+SELECT DISTINCT l2.id_autor
+FROM prestamos p
+INNER JOIN libros l2 ON p.id_libro = l2.id_libro
+GROUP BY l2.id_autor
+HAVING COUNT(DISTINCT p.id_libro) >= 2
+) AS autores_populares ON l.id_autor = autores_populares.id_autor
+LEFT JOIN prestamos p ON l.id_libro = p.id_libro
+WHERE p.id_prestamo IS NULL;
+
+-- Ejemplo 37: Informe completo de préstamos con todas las relaciones
+SELECT u.nombre_usuario, l.titulo,
+a.nombre_autor, e.nombre_editorial,
+p.fecha_prestamo, p.fecha_devolucion,
+DATEDIFF(COALESCE(p.fecha_devolucion, CURDATE()), p.fecha_prestamo) AS dias_prestamo,
+m.importe AS multa,
+v.puntuacion AS valoracion_usuario
+FROM prestamos p
+INNER JOIN usuarios u ON p.id_usuario = u.id_usuario
+INNER JOIN libros l ON p.id_libro = l.id_libro
+INNER JOIN autores a ON l.id_autor = a.id_autor
+INNER JOIN editoriales e ON l.id_editorial = e.id_editorial
+LEFT JOIN multas m ON p.id_prestamo = m.id_prestamo
+LEFT JOIN valoraciones v ON p.id_usuario = v.id_usuario AND p.id_libro = v.id_libro
+ORDER BY p.fecha_prestamo DESC;
+
+-- Ejemplo 38: Comparación de técnicas de conteo
+SELECT u.nombre_usuario,
+COUNT(*) AS filas_totales, -- cuenta TODAS las filas (incluye NULL)
+COUNT(p.id_prestamo) AS prestamos_reales, -- cuenta solo préstamos(excluye NULL)
+COUNT(DISTINCT p.id_libro) AS libros_diferentes,
+SUM(CASE WHEN p.devuelto = FALSE THEN 1 ELSE 0 END) AS activos
+FROM usuarios u
+LEFT JOIN prestamos p ON u.id_usuario = p.id_usuario
+GROUP BY u.id_usuario, u.nombre_usuario;
+
+-- Ejemplo 39: Libros con valoración promedio (incluyendo libros sin valoraciones)
+SELECT l.titulo,
+COUNT(v.id_valoracion) AS num_valoraciones,
+ROUND(AVG(v.puntuacion), 2) AS puntuacion_media,
+CASE
+WHEN COUNT(v.id_valoracion) = 0 THEN 'Sin valorar'
+WHEN AVG(v.puntuacion) >= 4.5 THEN 'Excelente'
+WHEN AVG(v.puntuacion) >= 3.5 THEN 'Bueno'
+ELSE 'Regular'
+END AS categoria
+FROM libros l
+LEFT JOIN valoraciones v ON l.id_libro = v.id_libro
+GROUP BY l.id_libro, l.titulo
+ORDER BY num_valoraciones DESC, puntuacion_media DESC;
