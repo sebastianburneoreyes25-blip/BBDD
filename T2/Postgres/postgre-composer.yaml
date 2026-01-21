@@ -1,0 +1,139 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres-container
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - fp-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin-container
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.es
+      PGADMIN_DEFAULT_PASSWORD: 1234
+    ports:
+      - "8080:80"
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - fp-network
+
+networks:
+  fp-network:
+    driver: bridge
+
+# ============================================================
+# GESTIÓN DEL ENTORNO DOCKER (POSTGRESQL + PGADMIN)
+# Archivo: postgre-composer.yaml
+# ============================================================
+
+# ------------------------------------------------------------
+# ARRANCAR EL SISTEMA DE CONTENEDORES
+# ------------------------------------------------------------
+# Ejecutar este comando desde la carpeta donde está este archivo:
+#   docker compose -f postgre-composer.yaml up -d
+
+
+# ------------------------------------------------------------
+# APAGAR EL SISTEMA DE CONTENEDORES
+# ------------------------------------------------------------
+# Detiene y elimina los contenedores, pero mantiene los datos:
+#   docker compose -f postgre-composer.yaml down
+
+
+# ------------------------------------------------------------
+# ACCESO A LOS SERVICIOS
+# ------------------------------------------------------------
+# pgAdmin (interfaz web):
+#   http://localhost:8080
+#   Usuario: admin@admin.es
+#   Contraseña: 1234
+#
+# PostgreSQL (desde aplicaciones o clientes externos):
+#   Host: localhost
+#   Puerto: 5432
+#   Usuario: postgres
+#   Contraseña: 1234
+#   Base de datos: postgres
+
+
+# ------------------------------------------------------------
+# REGISTRO DEL SERVIDOR POSTGRESQL EN PGADMIN
+# ------------------------------------------------------------
+# Dentro de pgAdmin, al crear un nuevo servidor:
+#   Host name/address: postgres
+#   Port: 5432
+#   Maintenance database: postgres
+#   Username: postgres
+#   Password: 1234
+#
+# Importante: el host NO es localhost, sino el nombre del servicio Docker.
+
+
+# ------------------------------------------------------------
+# PERSISTENCIA DE DATOS
+# ------------------------------------------------------------
+# Los datos de PostgreSQL se almacenan físicamente en:
+#   ./data/postgres
+#
+# La configuración y servidores de pgAdmin se almacenan en:
+#   ./data/pgadmin
+#
+# Si se borran estas carpetas, se perderán los datos y la configuración.
+
+
+# ------------------------------------------------------------
+# DETENER Y ARRANCAR CONTENEDORES INDIVIDUALMENTE
+# ------------------------------------------------------------
+# Detener contenedores:
+#   docker stop postgres-container
+#   docker stop pgadmin-container
+#
+# Arrancar contenedores detenidos:
+#   docker start postgres-container
+#   docker start pgadmin-container
+
+
+# ------------------------------------------------------------
+# ELIMINAR CONTENEDORES Y VOLVER A CREARLOS
+# ------------------------------------------------------------
+# Eliminar contenedores (sin borrar datos):
+#   docker rm postgres-container
+#   docker rm pgadmin-container
+#
+# Volver a crear los contenedores:
+#   docker compose -f postgre-composer.yaml up -d
+
+
+# ------------------------------------------------------------
+# REINICIO COMPLETO DEL ENTORNO (EMPEZAR DESDE CERO)
+# ------------------------------------------------------------
+# 1. Apagar el sistema:
+#      docker compose -f postgre-composer.yaml down
+# 2. Borrar las carpetas de datos:
+#      ./data/postgres
+#      ./data/pgadmin
+# 3. Volver a levantar el sistema:
+#      docker compose -f postgre-composer.yaml up -d
+
+
+# ------------------------------------------------------------
+# CREAR LAS CARPETAS DE DATOS MANUALMENTE (SI NO EXISTEN)
+# ------------------------------------------------------------
+# En PowerShell:
+#   New-Item -ItemType Directory -Path ".\data\postgres" -Force
+#   New-Item -ItemType Directory -Path ".\data\pgadmin" -Force
