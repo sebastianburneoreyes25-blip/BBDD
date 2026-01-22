@@ -342,3 +342,24 @@ ORDER BY tabla;
 -- 6. Verificar los accesos
 -- 7. Practicar revocación y reasignación
 -- =============================================
+
+CREATE OR REPLACE VIEW v_contactoEmpleado_rrhh AS 
+SELECT id_emp, nombre|| ' ' || apellidos AS nombreCompleto, email, telefono,activo FROM empleados;
+
+
+
+SELECT * FROM v_contactoEmpleado_rrhh;
+
+
+CREATE OR REPLACE VIEW v_productosStock_almacen AS
+SELECT p.id_prod,p.nombre,s.id_movimiento,s.tipo_movimiento, s.cantidad,s.motivo, s.id_empleado,s.fecha_movimiento 
+FROM productos p INNER JOIN stock_movimientos s ON s.id_prod=p.id_prod;
+
+select * from v_productosStock_almacen;
+
+CREATE OR REPLACE VIEW v_departamentosEmpleados_auditor AS 
+SELECT  d.nombre AS nombreDepartamento, d.presupuesto AS presupuestoDepartamento, 
+COUNT(e.id_emp) AS cantidadEmpleadosDepartamentos,SUM(e.salario) AS conjuntoSalarios
+FROM departamentos d INNER JOIN empleados e ON e.id_dept=d.id_dept WHERE e.activo=true GROUP BY d.id_dept;
+
+
