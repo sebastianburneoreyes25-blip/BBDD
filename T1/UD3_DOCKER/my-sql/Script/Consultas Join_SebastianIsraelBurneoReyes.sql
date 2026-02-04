@@ -386,3 +386,252 @@ FROM libros l
 LEFT JOIN valoraciones v ON l.id_libro = v.id_libro
 GROUP BY l.id_libro, l.titulo
 ORDER BY num_valoraciones DESC, puntuacion_media DESC;
+
+
+/*Ejemplo 40: Mismo resultado, dos enfoques
+Objetivo: Usuarios que han hecho al menos un préstamo.
+Enfoque 1 - Con JOIN:*/
+SELECT DISTINCT u.nombre_usuario, u.email
+FROM usuarios u
+INNER JOIN prestamos p ON u.id_usuario = p.id_usuario;
+
+-- Enfoque 2 - Con subconsulta:
+SELECT u.nombre_usuario, u.email
+FROM usuarios u
+WHERE u.id_usuario IN (
+SELECT DISTINCT id_usuario
+FROM prestamos
+);
+
+
+/*Ejemplo 41: Libros del autor más prolífico
+Enfoque 1 - Con JOIN:*/
+SELECT l.titulo, a.nombre_autor, COUNT(*) OVER (PARTITION BY a.id_autor) AS libros_autor
+FROM libros l
+INNER JOIN autores a ON l.id_autor = a.id_autor
+WHERE a.id_autor = (
+SELECT id_autor
+FROM libros
+GROUP BY id_autor
+ORDER BY COUNT(*) DESC
+LIMIT 1
+);
+-- Enfoque 2 - Con subconsulta en FROM:
+SELECT l.titulo, a.nombre_autor, autor_stats.total_libros
+FROM libros l
+INNER JOIN autores a ON l.id_autor = a.id_autor
+INNER JOIN (
+SELECT id_autor, COUNT(*) AS total_libros
+FROM libros
+GROUP BY id_autor
+ORDER BY COUNT(*) DESC
+LIMIT 1
+) AS autor_stats ON l.id_autor = autor_stats.id_autor;
+
+/*Ejemplo 42: Usuarios con multas pendientes
+Opción A - JOIN:*/
+SELECT DISTINCT u.nombre_usuario, u.email
+FROM usuarios u
+INNER JOIN prestamos p ON u.id_usuario = p.id_usuario
+INNER JOIN multas m ON p.id_prestamo = m.id_prestamo
+WHERE m.pagada = FALSE;
+-- Opción B - Subconsulta con EXISTS:
+SELECT u.nombre_usuario, u.email
+FROM usuarios u
+WHERE EXISTS (
+SELECT 1
+FROM prestamos p
+INNER JOIN multas m ON p.id_prestamo = m.id_prestamo
+WHERE p.id_usuario = u.id_usuario
+AND m.pagada = FALSE
+);
+-- Opción C - Subconsulta con IN:
+SELECT u.nombre_usuario, u.email
+FROM usuarios u
+WHERE u.id_usuario IN (
+SELECT p.id_usuario
+FROM prestamos p
+INNER JOIN multas m ON p.id_prestamo = m.id_prestamo
+WHERE m.pagada = FALSE
+);
+
+
+-- Ejercicio 1: Listar todos los préstamos mostrando nombre del usuario y título del libro.
+SELECT u.nombre_usuario, l.titulo FROM prestamos p 
+LEFT JOIN usuarios u ON u.id_usuario=p.id_usuario 
+INNER JOIN libros l ON l.id_libro=p.id_libro;
+
+-- Ejercicio 2: Mostrar todos los libros con el nombre de su autor.
+SELECT l.titulo, a.nombre_autor FROM libros l 
+INNER JOIN autores a ON a.id_autor=l.id_autor;
+
+-- Ejercicio 3: Listar las valoraciones mostrando quién valoró qué libro.
+SELECT  u.nombre_usuario, l.titulo, v.puntuacion, v.comentario, v.fecha_valoracion FROM valoraciones v 
+INNER JOIN usuarios u ON u.id_usuario=v.id_usuario
+INNER JOIN libros l ON v.id_libro=l.id_libro;
+
+-- Ejercicio 4: Mostrar préstamos con multa, indicando usuario, libro e importe de la multa.
+SELECT u.nombre_usuario, l.titulo, m.importe FROM multas m 
+INNER JOIN prestamos p ON p.id_prestamo=m.id_prestamo
+INNER JOIN usuarios u ON u.id_usuario=p.id_usuario
+INNER JOIN libros l ON l.id_libro=p.id_libro;
+
+-- Ejercicio 5: Listar libros con su autor y editorial.
+SELECT l.titulo, a.nombre_autor, e.nombre_editorial FROM libros l 
+INNER JOIN autores a ON a.id_autor=l.id_autor
+INNER JOIN editoriales e ON e.id_editorial=l.id_editorial;
+
+-- Ejercicio 6: Mostrar préstamos activos (no devueltos) con nombre de usuario.
+SELECT u.nombre_usuario, p.fecha_prestamo, p.devuelto FROM prestamos p 
+INNER JOIN usuarios u ON u.id_usuario=p.id_usuario 
+WHERE p.devuelto=FALSE ORDER BY p.fecha_prestamo ASC;
+
+-- Ejercicio 7: Listar autores españoles con sus libros.
+SELECT l.titulo, a.nombre_autor FROM autores a 
+INNER JOIN libros l ON l.id_autor=a.id_autor 
+WHERE a.nacionalidad = 'Español';
+
+-- Ejercicio 8: Mostrar valoraciones de 5 estrellas con título del libro y nombre del usuario.
+SELECT l.titulo, u.nombre_usuario, v.puntuacion, v.comentario FROM valoraciones v 
+INNER JOIN libros l ON l.id_libro=v.id_libro
+INNER JOIN usuarios u ON u.id_usuario=v.id_usuario
+WHERE v.puntuacion=5;
+
+-- Ejercicio 9: Listar libros publicados después de 2000 con su autor.
+SELECT l.titulo, a.nombre_autor, l.año_publicacion FROM libros l 
+INNER JOIN autores a ON a.id_autor=l.id_autor
+WHERE l.año_publicacion >2000 ORDER BY l.año_publicacion ASC;
+
+-- Ejercicio 10: Mostrar préstamos de noviembre de 2024 con usuario y libro.
+SELECT u.nombre_usuario, l.titulo,p.fecha_prestamo FROM prestamos p 
+INNER JOIN usuarios u ON u.id_usuario=p.id_usuario
+INNER JOIN libros l ON l.id_libro=p.id_libro
+WHERE p.fecha_prestamo >='2024-11-01' AND p.fecha_prestamo < '2024-12-01';
+
+-- Ejercicio 11: Listar TODOS los usuarios con el número de préstamos que han hecho (incluso si es 0).
+SELECT u.nombre_usuario, count(p.id_prestamo) as total_prestamos FROM prestamos p 
+INNER JOIN usuarios u ON u.id_usuario=p.id_usuario
+GROUP BY p.id_usuario ORDER BY total_prestamos DESC;
+
+-- Ejercicio 12: Encontrar usuarios que NUNCA han hecho un préstamo.
+SELECT u.nombre_usuario FROM prestamos p 
+RIGHT JOIN usuarios u ON u.id_usuario=p.id_usuario
+WHERE p.id_prestamo is null;
+
+-- Ejercicio 13: Mostrar TODOS los libros con el número de veces que han sido prestados.
+SELECT l.titulo, count(p.id_prestamo) AS nºprestamos FROM libros l 
+INNER JOIN prestamos p ON p.id_libro=l.id_libro
+GROUP BY l.id_libro;
+
+-- Ejercicio 14: Encontrar libros que NUNCA han sido prestados.
+SELECT l.titulo, COUNT(p.id_prestamo) AS nºprestamos FROM libros l
+INNER JOIN prestamos p ON p.id_libro = l.id_libro
+GROUP BY l.id_libro HAVING nºprestamos=0;
+
+-- Ejercicio 15: Listar TODOS los autores con el número de libros que tienen publicados.
+SELECT a.nombre_autor, COUNT(l.titulo) AS librosEscritos FROM libros l 
+INNER JOIN autores a ON a.id_autor=l.id_autor
+GROUP BY l.id_autor;
+
+-- Ejercicio 16: Mostrar TODOS los usuarios con su deuda total en multas (0 si no tienen).
+SELECT u.nombre_usuario,coalesce( SUM(m.importe),0) as deuda FROM usuarios u 
+RIGHT JOIN prestamos p ON p.id_usuario=u.id_usuario
+LEFT JOIN multas m ON m.id_prestamo=p.id_prestamo
+GROUP BY u.id_usuario;
+
+-- Ejercicio 17: Encontrar autores que NO tienen libros publicados en la biblioteca.
+SELECT a.nombre_autor, COUNT(l.titulo) AS librosEnLaBiblioteca FROM autores a 
+LEFT JOIN libros l ON l.id_autor=a.id_autor
+GROUP BY a.id_autor HAVING librosEnLaBiblioteca=0;
+
+-- Ejercicio 18: Listar TODOS los libros con su puntuación promedio (NULL si no tienen valoraciones).
+SELECT l.titulo, AVG(v.puntuacion) AS mediaValoraciones FROM valoraciones v
+RIGHT JOIN libros l ON l.id_libro=v.id_libro
+GROUP BY l.id_libro; 
+
+-- Ejercicio 19: Mostrar usuarios con préstamos activos y el total de días que llevan prestados.
+SELECT u.nombre_usuario, p.devuelto, DATEDIFF(CURDATE(), p.fecha_prestamo) AS dias_prestado FROM prestamos p 
+JOIN usuarios u ON u.id_usuario=p.id_usuario
+WHERE p.devuelto=false;
+
+-- Ejercicio 20: Listar libros con el número de valoraciones y préstamos (ambos pueden ser 0).
+SELECT l.titulo, COUNT(v.id_valoracion) AS cantidadValoraciones, COUNT(p.id_prestamo) AS cantidadPrestamos FROM libros l 
+LEFT JOIN valoraciones v ON v.id_libro=l.id_libro
+LEFT JOIN prestamos p ON p.id_libro=l.id_libro
+GROUP BY l.id_libro;
+
+-- Ejercicio 21: Top 5 usuarios con más préstamos, mostrando cuántos están activos y cuántos devueltos.
+SELECT u.nombre_usuario, COUNT(p.id_prestamo) AS cantidadPrestamos, SUM(CASE WHEN p.devuelto=FALSE THEN 1 ELSE 0 END ) AS activos, SUM(CASE WHEN p.devuelto=TRUE THEN 1 ELSE 0 END) AS devueltos 
+FROM usuarios u INNER JOIN prestamos p ON p.id_usuario=u.id_usuario
+GROUP BY p.id_usuario LIMIT 5; 
+
+-- Ejercicio 22: Autores con mejor puntuación promedio (mínimo 3 valoraciones).
+SELECT a.nombre_autor, COUNT(v.id_valoracion) AS cantidadValoraciones, AVG(v.puntuacion) AS valoraciones_medias 
+FROM autores a INNER JOIN libros l ON l.id_autor=a.id_autor INNER JOIN valoraciones v ON l.id_libro=v.id_libro
+GROUP BY l.id_autor HAVING cantidadValoraciones>=3;
+
+-- Ejercicio 23: Libros más populares del último mes (por préstamos).
+SELECT l.titulo, COUNT(p.id_prestamo) AS veces_prestado_ultimo_mes FROM libros l 
+INNER JOIN prestamos p ON p.id_libro=l.id_libro WHERE p.fecha_prestamo>=DATE_SUB(CURDATE(), INTERVAL 1 MONTH) 
+GROUP BY l.id_libro ORDER BY veces_prestado_ultimo_mes DESC;
+
+-- Ejercicio 24: Usuarios morosos (con multas pendientes superior a 10€).
+SELECT u.nombre_usuario, m.importe FROM usuarios u INNER JOIN prestamos p ON u.id_usuario=p.id_usuario
+INNER JOIN multas m ON m.id_prestamo=p.id_prestamo WHERE m.importe>=10 AND m.pagada=FALSE;
+
+-- Ejercicio 25: Libros con valoraciones contradictorias (tienen tanto 5 como 1-2 estrellas).
+SELECT l.titulo, max(v.puntuacion) AS puntuacion_mas_alta, min(v.puntuacion) AS puntuacion_mas_baja FROM valoraciones v
+INNER JOIN libros l ON l.id_libro=v.id_libro GROUP BY l.id_libro HAVING puntuacion_mas_baja <=2 AND puntuacion_mas_alta=5 ;
+
+-- Ejercicio 26: Parejas de usuarios que prestaron los mismos libros (SELF JOIN).
+SELECT DISTINCT u1.nombre_usuario AS Usuario1, u2.nombre_usuario AS Usuario2 , l.titulo FROM prestamos p1 
+INNER JOIN prestamos p2 ON p1.id_libro=p2.id_libro AND p1.id_usuario>p2.id_usuario 
+INNER JOIN usuarios u1 ON u1.id_usuario=p1.id_usuario 
+INNER JOIN usuarios	u2 ON u2.id_usuario=p2.id_usuario 
+INNER JOIN libros l ON l.id_libro=p1.id_libro;
+
+-- Ejercicio 27: Informe mensual: préstamos, nuevas valoraciones y multas generadas por mes.
+
+
+
+-- Ejercicio 28: Libros «olvidados» de autores populares (autor con ≥3 libros, pero este libro nunca prestado).
+SELECT l.titulo, a.nombre_autor FROM libros l 
+INNER JOIN autores a ON a.id_autor=l.id_autor 
+INNER JOIN (SELECT id_autor FROM libros group by id_autor HAVING COUNT(*) >=3) AS autoresPopulares  ON a.id_autor=autoresPopulares.id_autor
+LEFT JOIN prestamos p ON p.id_libro=l.id_libro
+WHERE id_prestamo IS NULL ;
+
+-- Ejercicio 29: Dashboard completo de un usuario: préstamos totales, activos, multas, valoraciones dadas.
+SELECT u.nombre_usuario, COUNT(p.id_prestamo) AS prestramos_totales, COUNT(CASE WHEN p.devuelto=FALSE THEN 1 ELSE 0 END) AS prestamos_activos, 
+COUNT(m.id_multa) AS cantidad_multas, COUNT(v.id_valoracion) AS	valoraciones_dadas
+FROM usuarios u LEFT JOIN prestamos p ON p.id_usuario=u.id_usuario LEFT JOIN multas m ON m.id_prestamo=p.id_prestamo 
+INNER JOIN valoraciones v ON v.id_usuario=u.id_usuario
+GROUP BY u.id_usuario;
+
+-- Ejercicio 30: Análisis de «afinidad» de usuarios: usuarios con gustos similares basados en valoraciones comunes.
+SELECT u.nombre_usuario, u2.nombre_usuario, COUNT(v.id_libro) AS libros_comun, ROUND(AVG(v.puntuacion-v2.puntuacion),2) AS diferencia_promedio FROM valoraciones v 
+INNER JOIN valoraciones v2 ON v.id_libro=v2.id_libro AND v.id_usuario<v2.id_usuario
+INNER JOIN usuarios u ON v.id_usuario=u.id_usuario
+INNER JOIN usuarios u2 ON u2.id_usuario=v2.id_usuario
+GROUP BY u.id_usuario,u2.id_usuario;
+
+-- Ejercicio 32: Detectar préstamos sospechosos: mismo libro prestado a múltiples usuarios en fechas superpuestas.
+SELECT l.titulo, p1.id_prestamo AS prestamo1, p2.id_prestamo AS prestamo2, p1.fecha_prestamo AS fechaPrestamo1, p1.fecha_devolucion AS devolucion1, p2.fecha_prestamo AS fechaPrestamo2, 
+DATEDIFF( LEAST(COALESCE(p1.fecha_devolucion, CURDATE()), COALESCE(p2.fecha_devolucion, CURDATE())), GREATEST(p1.fecha_prestamo, p2.fecha_prestamo) ) AS dias_solapados
+FROM prestamos p1 INNER JOIN prestamos p2 ON p1.id_libro=p2.id_libro AND p1.fecha_prestamo<p2.fecha_prestamo AND p1.id_prestamo<p2.id_prestamo 
+AND p1.fecha_devolucion<=COALESCE(p2.fecha_devolucion, CURDATE()) INNER JOIN libros l ON p1.id_libro=l.id_libro;
+
+-- Ejercicio 33: Reporte ejecutivo completo: estadísticas generales de la biblioteca.
+SELECT (SELECT COUNT(*) FROM usuarios) AS total_usuarios, (SELECT COUNT(*) FROM usuarios u LEFT JOIN prestamos p ON p.id_usuario=u.id_usuario WHERE p.id_prestamo IS NULL ) AS usuarios_sin_prestamos, 
+(SELECT COUNT(*)FROM libros ) AS total_libros,(SELECT COUNT(DISTINCT id_libro)FROM prestamos)AS libros_alguna_vez_prestados, (SELECT COUNT(*)FROM prestamos WHERE devuelto=FALSE) AS prestamos_activos,
+(SELECT COUNT(*) FROM prestamos WHERE devuelto=TRUE) AS prestamos_devueltos, (SELECT AVG(puntuacion)FROM valoraciones) AS valorcion_premedio, (SELECT SUM(importe)FROM multas WHERE pagada=FALSE) AS deuda_total_multas,
+(SELECT COUNT(*)FROM multas WHERE pagada=FALSE)AS multas_pendientes, 
+(SELECT nombre_autor FROM autores a 
+INNER JOIN libros l ON a.id_autor = l.id_autor
+INNER JOIN prestamos p ON l.id_libro = p.id_libro
+GROUP BY a.id_autor, a.nombre_autor
+ORDER BY COUNT(*) DESC LIMIT 1) AS autor_mas_prestado;
+
+
+
+
