@@ -362,4 +362,18 @@ SELECT  d.nombre AS nombreDepartamento, d.presupuesto AS presupuestoDepartamento
 COUNT(e.id_emp) AS cantidadEmpleadosDepartamentos,SUM(e.salario) AS conjuntoSalarios
 FROM departamentos d INNER JOIN empleados e ON e.id_dept=d.id_dept WHERE e.activo=true GROUP BY d.id_dept;
 
+CREATE ROLE rrhh WITH LOGIN;
+CREATE ROLE almacen WITH LOGIN;
+CREATE ROLE auditor WITH LOGIN;
 
+GRANT ALL PRIVILEGES ON v_contactoEmpleado_rrhh TO rrhh;
+GRANT SELECT ON v_productosStock_almacen TO almacen;
+GRANT SELECT ON v_departamentosEmpleados_auditor TO auditor;
+
+CREATE USER ana_rrhh WITH PASSWORD 'RRhh1234';
+CREATE USER maria_alamcen WITH PASSWORD 'maria1234';
+CREATE USER lucia_auditor WITH PASSWORD 'au1234';
+
+GRANT rrhh TO ana_rrhh;
+GRANT almacen TO maria_alamcen;
+GRANT auditor TO lucia_auditor;
