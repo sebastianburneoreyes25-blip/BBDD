@@ -4,7 +4,7 @@
 -- Modulo: 0484 - Bases de Datos
 -- RA: RA4 - Tratamiento de Datos
 -- =====================================================
-
+CREATE DATABASE POSTGRESCOSAS;
 SET client_encoding = 'UTF8';
 
 BEGIN;
