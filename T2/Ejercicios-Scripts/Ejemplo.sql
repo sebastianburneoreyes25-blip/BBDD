@@ -1,3 +1,5 @@
+
+
 -- =============================================
 -- BASE DE DATOS TECHSTORE - PostgreSQL
 -- Actividad Evaluable RA3: Control de Acceso
@@ -377,3 +379,4 @@ CREATE USER lucia_auditor WITH PASSWORD 'au1234';
 GRANT rrhh TO ana_rrhh;
 GRANT almacen TO maria_alamcen;
 GRANT auditor TO lucia_auditor;
+

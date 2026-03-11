@@ -57,3 +57,91 @@ CREATE TABLE empleados_exportar AS
 SELECT nombre || ' ' || apellido AS nombre_completo, salario * 12 AS salario_anual 
 FROM empleados;
 
+/*4.4
+Ejercicio 1: Crear script de inicializacion
+Crea un script que cree una tabla productos con campos id, nombre, precio y stock.*/
+
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS productos2(
+id SERIAL PRIMARY KEY,
+nombre VARCHAR(80),
+precio DECIMAL (10,2) CHECK (precio>=0),
+stock INTEGER DEFAULT 0 CHECK (stock>=0)
+);
+COMMIT;
+
+/*Ejercicio 2: Script con variables
+Crea un script que actualice el stock de un producto usando una variable.*/
+BEGIN;
+DO $$
+DECLARE 
+v_idProducto INTEGER := 1;
+v_stock INTEGER := 25;
+
+BEGIN
+UPDATE productos 
+SET stock=v_stock
+WHERE id=v_idProducto;
+
+RAISE NOTICE 'Se ha actualizado el stock del producto con id % a % ',v_idProducto,v_stock;
+END $$;
+COMMIT;
+
+/*4.5
+Ejercicio 1: Transaccion basica
+Crea una transaccion que inserte un departamento y dos empleados en ese departamento.*/
+
+BEGIN;
+INSERT INTO departamentos(nombre, ubicacion) VALUES ('IT', 'Nose')
+RETURNING id;
+
+INSERT INTO empleados (nombre,apellido,email,salario,departamento_id) 
+VALUES ('yo','yo','yo@yo.yo',50000,5),('tu','to','to@o.yo',50000,5)
+RETURNING *;
+
+COMMIT;
+
+/*Ejercicio 2: Identificar ACID
+Indica que propiedad ACID se aplica en cada caso:
+
+Si la luz se va durante una transaccion, los cambios no confirmados se pierden.  ATOMICITY(atomicidad)
+
+Una transferencia resta de una cuenta y suma a otra, o no hace nada. CONSISTENCY(consistencia)
+
+Dos usuarios modificando la misma tabla no ven los cambios del otro hasta confirmar.  ISOLATION(aislamiento)
+
+Una vez confirmado el COMMIT, los datos permanecen aunque reinicies el servidor. DURABILITY(durabilidad)*/
+
+----------------------------------------------------------------------------------------------------------------
+/*4.6
+Ejercicio 1: Usar SAVEPOINT
+Crea una transaccion que inserte 3 registros con savepoints entre cada uno. Luego deshaz solo el ultimo.*/
+BEGIN; 
+INSERT INTO categorias (nombre,descripcion) VALUES ('Nueva Categoria 1', 'Descripcion 1');
+SAVEPOINT sp1;
+
+INSERT INTO categorias (nombre,descripcion) VALUES ('Nueva Categoria 2', 'Descripcion 1');
+SAVEPOINT sp2;
+
+INSERT INTO categorias (nombre,descripcion) VALUES ('Nueva Categoria 3', 'Descripcion 3');
+SAVEPOINT sp3;
+
+ROLLBACK TO sp2;
+COMMIT;
+
+/*Ejercicio 2: Manejo de errores
+Escribe un bloque que intente insertar un registro, y si falla, inserte un registro alternativo.*/
+
+DO $$
+BEGIN
+	INSERT INTO cuentas(titular,saldo,tipo) VALUES ('Sebas', '158a', 'nose');
+
+	EXCEPTION WHEN OTHERS THEN 	
+		RAISE NOTICE 'Operacion fallida, creado cuenta temporal con datos predeterminados. Configurar antes de seguir';
+		INSERT INTO cuentas(titular,saldo,tipo) VALUES ('default',1, 'corriente');
+COMMIT;
+END $$;
+
+
+
