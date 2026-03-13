@@ -14,7 +14,7 @@ SELECT name, cdb FROM v$database;
 CREATE PLUGGABLE DATABASE pdb_alumnos
     ADMIN USER admin_alumnos IDENTIFIED BY Oracle123
     STORAGE UNLIMITED
-    FILE_NAME_CONVERT = (
+    FILE_NAME_CONVERT=(
         '/opt/oracle/oradata/XE/pdbseed/',
         '/opt/oracle/oradata/XE/pdb_alumnos/'
     );
@@ -46,3 +46,16 @@ commit;
 /*Cerramos la PDB*/
 ALTER PLUGGABLE DATABASE pdb_alumnos CLOSE IMMEDIATE;
 
+/*actividad 1.2*/
+CREATE USER c##comun1 IDENTIFIED BY c1234;
+GRANT CREATE SESSION to c##comun1; 
+GRANT DBA to c##comun1;
+
+
+CREATE USER local1 IDENTIFIED BY l1234;
+GRANT CREATE SESSION TO local1;
+show CON_NAME;
+
+DROP USER local1;
+
+SELECT * FROM DBA_SYS_PRIVS WHERE GRANTEE='local1'; 
