@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: mongo-container
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    volumes:
+      - ./mongo-data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-express:
+    image: mongo-express:1.0.0-alpha.4
+    container_name: mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
+      ME_CONFIG_MONGODB_SERVER: mongodb
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+
+
+
+# docker compose up -d
+# Accede a Mongo Express desde: http://localhost:8081
+
+# Reiniciar contenedores para aplicar el script:
+# docker compose down -v
+# docker compose up -d
+
+# Comandos MongoDB desde mongosh
+# docker exec -it mongo-container mongosh -u admin -p admin123
+
+# Comando para acceder a MongoDB Compass:
+# mongodb://admin:admin123@localhost:27017/?authMechanism=DEFAULT&authSource=admin&readPreference=primary&appname=MongoDB%20Compass&ssl=false
+# mongodb://admin:admin123@localhost:27017
+# enlace de descarga de MongoDB Compass: https://www.mongodb.com/try/download/compass
